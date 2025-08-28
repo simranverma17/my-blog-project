@@ -13,7 +13,7 @@ function Login() {
     e.preventDefault();
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      navigate("/home"); // redirect after login
+      navigate("/home"); 
     } catch (err) {
       setError(err.message);
     }

@@ -14,13 +14,13 @@ function Signup() {
   const handleSignup = async (e) => {
     e.preventDefault();
     try {
-      // Create user
+      
       const res = await createUserWithEmailAndPassword(auth, email, password);
 
-      // Update display name
+      
       await updateProfile(res.user, { displayName });
 
-      // Save user info in Firestore
+      
       await setDoc(doc(db, "users", res.user.uid), {
         email: res.user.email,
         displayName,
@@ -29,7 +29,7 @@ function Signup() {
         createdAt: serverTimestamp(),
       });
 
-      navigate("/home"); // redirect after signup
+      navigate("/home"); 
     } catch (err) {
       setError(err.message);
     }
