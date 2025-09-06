@@ -1,64 +1,56 @@
 import { useState } from "react";
 import { db, auth } from "./firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { useNavigate } from "react-router-dom";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { useAuthState } from "react-firebase-hooks/auth";
+import "./styles/BlogEditor.css";
 
 function BlogEditor() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [error, setError] = useState("");
-  const navigate = useNavigate();
+  const [user] = useAuthState(auth);
 
-  const handlePublish = async (e) => {
+  const handlePost = async (e) => {
     e.preventDefault();
-    if (!title || !content) {
-      setError("Title and content are required!");
-      return;
-    }
+    if (!user) return alert("You must be logged in to post");
 
     try {
-      
-      const docRef = await addDoc(collection(db, "posts"), {
+      await addDoc(collection(db, "posts"), {
         title,
         content,
-        authorId: auth.currentUser.uid,
-        authorEmail: auth.currentUser.email,
-        createdAt: serverTimestamp(), 
-        likes: [],
-        slug: title.toLowerCase().replace(/\s+/g, "-"),
+        authorEmail: user.email,
+        createdAt: serverTimestamp(),
       });
-
-      alert("Post published successfully!");
-      navigate("/home"); 
+      setTitle("");
+      setContent("");
+      alert("Post created 🎉");
     } catch (err) {
-      setError(err.message);
+      console.error(err);
+      alert("Error creating post: " + err.message);
     }
   };
 
   return (
-    <div style={{ maxWidth: "600px", margin: "20px auto" }}>
-      <h2>Create a Blog Post</h2>
-      <form
-        onSubmit={handlePublish}
-        style={{ display: "flex", flexDirection: "column", gap: "10px" }}
-      >
-        <input
-          type="text"
-          placeholder="Post Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-        />
-        <textarea
-          placeholder="Post Content"
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          rows={10}
-          required
-        />
-        <button type="submit">Publish</button>
-        {error && <p style={{ color: "red" }}>{error}</p>}
-      </form>
+    <div className="editor-page">
+      <div className="editor-card">
+        <h1 className="brand-title">BlogSphere</h1>
+        <h2 className="editor-heading">Create a New Post</h2>
+        <form onSubmit={handlePost}>
+          <input
+            type="text"
+            placeholder="Enter post title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+          />
+          <textarea
+            placeholder="Write your blog content..."
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            required
+          />
+          <button type="submit">Publish Post</button>
+        </form>
+      </div>
     </div>
   );
 }

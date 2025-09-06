@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
-import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 import { db } from "./firebase";
+import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
+import "./styles/Home.css";
+import Loader from "./components/Loader";
 import { Link } from "react-router-dom";
 
 function Home() {
   const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
@@ -14,52 +17,47 @@ function Home() {
         ...doc.data(),
       }));
       setPosts(postsData);
+      setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
-  return (
-    <div style={{ maxWidth: "800px", margin: "20px auto" }}>
-      <h2 style={{ textAlign: "center", marginBottom: "20px" }}>Blog Posts</h2>
-      {posts.length === 0 && <p>No posts yet. Create one!</p>}
+  if (loading) return <Loader />;
 
-      {posts.map((post) => (
-        <div
-          key={post.id}
-          style={{
-            border: "1px solid #ccc",
-            borderRadius: "8px",
-            padding: "15px",
-            marginBottom: "15px",
-            background: "#f9f9f9",
-          }}
-        >
-          <h3>
-            <Link
-              to={`/post/${post.id}`}
-              style={{ textDecoration: "none", color: "#282c34" }}
-            >
-              {post.title}
+  return (
+    <div className="home-page">
+      <div className="home-container">
+        <h1 className="brand-title">BlogSphere</h1>
+        <h2 className="home-heading">Latest Posts</h2>
+
+        {posts.length === 0 && (
+          <p className="no-posts">No posts yet. Create one!</p>
+        )}
+
+        {posts.map((post) => (
+          <div key={post.id} className="post-card">
+            <Link to={`/post/${post.id}`} className="post-link">
+            <h3>{post.title}</h3>
             </Link>
-          </h3>
-          <p
-            dangerouslySetInnerHTML={{
-              __html:
-                post.content.length > 200
-                  ? post.content.slice(0, 200) + "..."
-                  : post.content,
-            }}
-          />
-          <p style={{ fontSize: "12px", color: "gray" }}>
-            By: {post.authorEmail} |{" "}
-            {post.createdAt?.toDate
-              ? post.createdAt.toDate().toLocaleString()
-              : "Unknown date"}
-          </p>
-          <p>Likes: {post.likes?.length || 0}</p>
-        </div>
-      ))}
+            <p
+              className="post-snippet"
+              dangerouslySetInnerHTML={{
+                __html:
+                  post.content.length > 200
+                    ? post.content.slice(0, 200) + "..."
+                    : post.content,
+              }}
+            />
+            <p className="post-meta">
+              By <strong>{post.authorEmail}</strong> •{" "}
+              {post.createdAt?.toDate
+                ? post.createdAt.toDate().toLocaleString()
+                : "Unknown date"}
+            </p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

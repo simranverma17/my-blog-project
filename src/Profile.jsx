@@ -1,71 +1,26 @@
-import { useState, useEffect } from "react";
-import { auth, db } from "./firebase";
+import { auth } from "./firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { doc, getDoc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
+import "./styles/Profile.css";
 
 function Profile() {
   const [user] = useAuthState(auth);
-  const [userData, setUserData] = useState({});
 
-  useEffect(() => {
-    if (user) {
-      const fetchUserData = async () => {
-        const docRef = doc(db, "users", user.uid);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          setUserData(docSnap.data());
-        }
-      };
-      fetchUserData();
-    }
-  }, [user]);
-
-  if (!user) return <p>Please login to view your profile.</p>;
+  if (!user) return <p>No user found</p>;
 
   return (
-    <div
-      style={{
-        maxWidth: "500px",
-        margin: "20px auto",
-        border: "1px solid #ccc",
-        borderRadius: "8px",
-        padding: "20px",
-        background: "#f9f9f9",
-      }}
-    >
-      <h2 style={{ textAlign: "center" }}>User Profile</h2>
-      {userData.photoURL && (
-        <div style={{ textAlign: "center", marginBottom: "10px" }}>
-          <img
-            src={userData.photoURL}
-            alt="Avatar"
-            width="100"
-            style={{ borderRadius: "50%" }}
-          />
-        </div>
-      )}
-      <p>
-        <strong>Name:</strong> {userData.displayName || "N/A"}
-      </p>
-      <p>
-        <strong>Email:</strong> {user.email}
-      </p>
-      <p>
-        <strong>Bio:</strong> {userData.bio || "N/A"}
-      </p>
+    <div className="profile-page">
+      <div className="profile-card">
+        <h1 className="brand-title">BlogSphere</h1>
+        <h2 className="profile-heading">Your Profile</h2>
 
-      <div style={{ textAlign: "center", marginTop: "20px" }}>
-        <button
-          onClick={() => signOut(auth)}
-          style={{
-            padding: "10px 20px",
-            borderRadius: "4px",
-            background: "#282c34",
-            color: "white",
-            cursor: "pointer",
-          }}
-        >
+        {user.photoURL && (
+          <img src={user.photoURL} alt="avatar" className="profile-avatar" />
+        )}
+        <p><strong>Name:</strong> {user.displayName || "N/A"}</p>
+        <p><strong>Email:</strong> {user.email}</p>
+
+        <button onClick={() => signOut(auth)} className="logout-btn">
           Logout
         </button>
       </div>

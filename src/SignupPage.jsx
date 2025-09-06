@@ -1,33 +1,16 @@
 import Signup from "./Signup";
 import { Link } from "react-router-dom";
+import "./styles/AuthPage.css";   
 
 function SignupPage() {
   return (
-    <div style={{ 
-      display: "flex", 
-      justifyContent: "center", 
-      alignItems: "center", 
-      height: "100vh", 
-      background: "#f4f6f9" 
-    }}>
-      <div style={{ 
-        background: "white", 
-        padding: "30px", 
-        borderRadius: "10px", 
-        boxShadow: "0 4px 10px rgba(0,0,0,0.1)", 
-        width: "400px", 
-        textAlign: "center" 
-      }}>
-        <h1 style={{ marginBottom: "10px", color: "#333" }}>BlogSphere 🚀</h1>
-        <h2 style={{ marginBottom: "20px", color: "#444" }}>Signup</h2>
-
+    <div className="auth-page">
+      <div className="auth-card">
+        <h1 className="brand-title">BlogSphere</h1>
+        <h2 className="auth-heading">Signup</h2>
         <Signup />
-
-        <p style={{ marginTop: "20px" }}>
-          Already have an account?{" "}
-          <Link to="/login" style={{ color: "#007bff" }}>
-            Login here
-          </Link>
+        <p className="switch-text">
+          Already have an account? <Link to="/login">Login here</Link>
         </p>
       </div>
     </div>

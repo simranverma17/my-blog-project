@@ -1,0 +1,217 @@
+/* Main page container */
+.post-page {
+  min-height: 100vh;
+  background: #f8f9fb; /* soft light gray background */
+  padding: 50px 20px;
+  display: flex;
+  justify-content: center;
+  font-family: "Segoe UI", Roboto, sans-serif;
+}
+
+/* Post card */
+.post-container {
+  width: 100%;
+  max-width: 900px;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08);
+  animation: fadeIn 0.6s ease-in-out;
+}
+
+/* Post title with gradient effect */
+.post-title {
+  font-size: 36px;
+  font-weight: 700;
+  margin-bottom: 25px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Post content */
+.post-content {
+  font-size: 17px;
+  line-height: 1.75;
+  color: #444;
+  margin-bottom: 25px;
+}
+
+/* Post author/date */
+.post-meta {
+  font-size: 14px;
+  color: #888;
+  margin-bottom: 30px;
+}
+
+/* Like & comment actions */
+.post-actions {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+  margin-bottom: 50px;
+}
+
+.like-button {
+  padding: 10px 22px;
+  border-radius: 12px;
+  border: none;
+  background: #f0f0f0;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.like-button:hover {
+  background: #e2e2e2;
+}
+
+.like-button.liked {
+  background: linear-gradient(135deg, #ff6b81, #ff4757);
+  color: white;
+  font-weight: 600;
+}
+
+.comment-count {
+  font-size: 15px;
+  color: #666;
+}
+
+/* Comments section */
+.comments-section {
+  margin-top: 50px;
+}
+
+.comments-section h3 {
+  font-size: 22px;
+  margin-bottom: 25px;
+  color: #333;
+  font-weight: 600;
+}
+
+/* Comment input form */
+.comment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 30px;
+}
+
+.comment-form input {
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+  font-size: 15px;
+  transition: border 0.3s ease, box-shadow 0.3s ease;
+}
+
+.comment-form input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+  outline: none;
+}
+
+.comment-form button {
+  align-self: flex-start;
+  padding: 12px 22px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.comment-form button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(102, 126, 234, 0.3);
+}
+
+/* Replying to notice */
+.replying-to {
+  font-size: 13px;
+  color: #555;
+}
+
+.cancel-reply {
+  margin-left: 10px;
+  background: none;
+  border: none;
+  color: #e74c3c;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+/* Individual comment card */
+.comment-card {
+  background: #fafafa;
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-bottom: 15px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.comment-card:hover {
+  transform: translateY(-2px);
+}
+
+.comment-author {
+  font-size: 15px;
+  font-weight: bold;
+  color: #333;
+}
+
+.comment-text {
+  margin: 8px 0;
+  font-size: 15px;
+  color: #444;
+}
+
+.comment-date {
+  font-size: 12px;
+  color: #999;
+}
+
+.comment-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 12px;
+}
+
+.reply-btn, .toggle-replies {
+  border: none;
+  background: transparent;
+  color: #667eea;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.reply-btn:hover, .toggle-replies:hover {
+  color: #4b5cc4;
+}
+
+.delete-comment {
+  background: transparent;
+  border: none;
+  color: #e74c3c;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Fade-in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

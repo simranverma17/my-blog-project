@@ -1,27 +1,27 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-
 import App from "./App";
+import LoginPage from "./LoginPage";
+import SignupPage from "./SignupPage";
 import Home from "./Home";
 import Profile from "./Profile";
 import EditProfile from "./EditProfile";
 import BlogEditor from "./BlogEditor";
 import PostView from "./PostView";
-import SignupPage from "./SignupPage";
-import LoginPage from "./LoginPage";
 import ProtectedRoute from "./ProtectedRoute";
+import "./styles/global.css";
+
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
     <Routes>
       <Route path="/" element={<App />}>
-        {/* Public */}
         <Route index element={<LoginPage />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="signup" element={<SignupPage />} />
 
-        {/* Protected */}
+        {/* Protected Routes */}
         <Route
           path="home"
           element={
@@ -47,7 +47,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           }
         />
         <Route
-          path="create-post"
+          path="editor"
           element={
             <ProtectedRoute>
               <BlogEditor />

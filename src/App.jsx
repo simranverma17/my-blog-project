@@ -1,11 +1,13 @@
-import Navbar from "./Navbar";
 import { Outlet } from "react-router-dom";
+import Navbar from "./Navbar";
 
 function App() {
   return (
     <div>
       <Navbar />
-      <Outlet />
+      <div style={{ padding: "20px" }}>
+        <Outlet />
+      </div>
     </div>
   );
 }
