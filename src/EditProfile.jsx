@@ -1,37 +1,117 @@
-import { useState } from "react";
-import { auth, db } from "./firebase";
-import { updateProfile } from "firebase/auth";
-import { doc, updateDoc } from "firebase/firestore";
+import { useState, useEffect } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
-import "./styles/Form.css";
+import { auth, db, storage } from "./firebase";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { useNavigate } from "react-router-dom";
+import "./styles/Profile.css";
 
-function EditProfile() {
+export default function EditProfile() {
   const [user] = useAuthState(auth);
-  const [displayName, setDisplayName] = useState(user?.displayName || "");
-  const [bio, setBio] = useState("");
-  const [message, setMessage] = useState("");
+  const navigate = useNavigate();
 
-  const handleUpdate = async (e) => {
-    e.preventDefault();
+  const [displayName, setDisplayName] = useState("");
+  const [bio, setBio] = useState("");
+  const [photoFile, setPhotoFile] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
     if (!user) return;
 
+    const fetchProfile = async () => {
+      try {
+        const docRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(docRef);
+        const data = docSnap.exists() ? docSnap.data() : {};
+        setDisplayName(data?.displayName || user.displayName || "");
+        setBio(data?.bio || "");
+      } catch (err) {
+        console.error("Error fetching profile:", err);
+        setDisplayName(user.displayName || "");
+        setBio("");
+      }
+    };
+
+    fetchProfile();
+  }, [user]);
+
+  if (!user) return <p className="text-center mt-3">Please login to edit your profile.</p>;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
     try {
-      await updateProfile(user, { displayName });
-      await updateDoc(doc(db, "users", user.uid), { displayName, bio });
-      setMessage("Profile updated successfully ✅");
+      let photoURL = null;
+
+      // Upload photo if selected
+      if (photoFile) {
+        const photoRef = ref(storage, `profilePhotos/${user.uid}`);
+        await uploadBytes(photoRef, photoFile);
+        photoURL = await getDownloadURL(photoRef);
+      }
+
+      // Update Firestore
+      const profileRef = doc(db, "users", user.uid);
+      await updateDoc(profileRef, {
+        displayName,
+        bio,
+        ...(photoURL && { photoURL }),
+      });
+
+      // Update Firebase Auth profile
+      if (user) {
+        await user.updateProfile({ displayName, ...(photoURL && { photoURL }) });
+      }
+
+      navigate("/profile");
     } catch (err) {
-      setMessage("Error: " + err.message);
+      console.error("Error updating profile:", err);
+      alert("Error saving profile!");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleUpdate} style={{ display: "flex", flexDirection: "column", gap: "10px", maxWidth: "400px" }}>
-      <input type="text" placeholder="Name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
-      <textarea placeholder="Bio" value={bio} onChange={(e) => setBio(e.target.value)} />
-      <button type="submit">Save</button>
-      {message && <p>{message}</p>}
-    </form>
+    <div className="profile-page">
+      <div className="profile-container">
+        <h2 className="profile-heading">Edit Profile</h2>
+
+        <form className="edit-profile-form" onSubmit={handleSubmit}>
+          <label>
+            Display Name
+            <input
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              required
+            />
+          </label>
+
+          <label>
+            Bio
+            <textarea
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              rows={4}
+            />
+          </label>
+
+          <label>
+            Profile Photo
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setPhotoFile(e.target.files[0])}
+            />
+          </label>
+
+          <button type="submit" disabled={loading}>
+            {loading ? "Saving..." : "Save Changes"}
+          </button>
+        </form>
+      </div>
+    </div>
   );
 }
-
-export default EditProfile;

@@ -8,7 +8,7 @@ import Home from "./Home";
 import Profile from "./Profile";
 import EditProfile from "./EditProfile";
 import BlogEditor from "./BlogEditor";
-import PostPage from "./PostPage";   // ✅ Use PostPage instead of PostView
+import PostPage from "./PostPage";
 import ProtectedRoute from "./ProtectedRoute";
 import "./styles/global.css";
 
@@ -57,7 +57,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           path="post/:postId"
           element={
             <ProtectedRoute>
-              <PostPage />   {/* ✅ Fixed here */}
+              <PostPage />
             </ProtectedRoute>
           }
         />

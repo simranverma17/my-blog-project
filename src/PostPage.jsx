@@ -2,24 +2,24 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   doc,
+  onSnapshot,
   updateDoc,
   arrayUnion,
   arrayRemove,
-  onSnapshot,
 } from "firebase/firestore";
 import { db, auth } from "./firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { FaHeart, FaRegHeart, FaCloud, FaReply } from "react-icons/fa";
 import "./styles/PostPage.css";
 
-function PostPage() {
+export default function PostPage() {
   const { postId } = useParams();
   const [post, setPost] = useState(null);
   const [comment, setComment] = useState("");
-  const [replyText, setReplyText] = useState("");
-  const [replyingTo, setReplyingTo] = useState(null); // comment index being replied to
+  const [replyMap, setReplyMap] = useState({});
   const [user] = useAuthState(auth);
 
+  // Fetch post data with live updates
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "posts", postId), (docSnap) => {
       if (docSnap.exists()) {
@@ -29,52 +29,77 @@ function PostPage() {
     return () => unsub();
   }, [postId]);
 
+  // Handle Likes
   const handleLike = async () => {
     if (!user) return alert("Please login to like posts");
-    const postRef = doc(db, "posts", postId);
-    if (post.likes?.includes(user.uid)) {
-      await updateDoc(postRef, { likes: arrayRemove(user.uid) });
-    } else {
-      await updateDoc(postRef, { likes: arrayUnion(user.uid) });
+    try {
+      const postRef = doc(db, "posts", postId);
+      if (post.likes?.includes(user.uid)) {
+        await updateDoc(postRef, { likes: arrayRemove(user.uid) });
+      } else {
+        await updateDoc(postRef, { likes: arrayUnion(user.uid) });
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error updating like!");
     }
   };
 
+  // Handle Comment
   const handleComment = async (e) => {
     e.preventDefault();
     if (!user) return alert("Please login to comment");
-    const postRef = doc(db, "posts", postId);
-    await updateDoc(postRef, {
-      comments: arrayUnion({
-        text: comment,
-        user: user.displayName || user.email,
-        createdAt: new Date(),
-        replies: [],
-      }),
-    });
-    setComment("");
+    if (!comment.trim()) return;
+    try {
+      const postRef = doc(db, "posts", postId);
+      await updateDoc(postRef, {
+        comments: arrayUnion({
+          id: Date.now(),
+          text: comment,
+          user: user.displayName || user.email,
+          createdAt: new Date(),
+          replies: [],
+        }),
+      });
+      setComment("");
+    } catch (err) {
+      console.error(err);
+      alert("Error posting comment!");
+    }
   };
 
-  const handleReply = async (e, index) => {
-    e.preventDefault();
+  // Handle Reply
+  const handleReply = async (commentId, replyText) => {
     if (!user) return alert("Please login to reply");
-    if (!replyText) return;
-
-    const postRef = doc(db, "posts", postId);
-    const updatedComments = [...post.comments];
-    if (!updatedComments[index].replies) updatedComments[index].replies = [];
-
-    updatedComments[index].replies.push({
-      text: replyText,
-      user: user.displayName || user.email,
-      createdAt: new Date(),
-    });
-
-    await updateDoc(postRef, { comments: updatedComments });
-    setReplyText("");
-    setReplyingTo(null);
+    if (!replyText.trim()) return;
+    try {
+      const postRef = doc(db, "posts", postId);
+      const updatedComments = post.comments.map((c) => {
+        if (c.id === commentId) {
+          return {
+            ...c,
+            replies: [
+              ...(c.replies || []),
+              {
+                id: Date.now(),
+                text: replyText,
+                user: user.displayName || user.email,
+                createdAt: new Date(),
+              },
+            ],
+          };
+        }
+        return c;
+      });
+      await updateDoc(postRef, { comments: updatedComments });
+      setReplyMap({ ...replyMap, [commentId]: "" });
+    } catch (err) {
+      console.error(err);
+      alert("Error posting reply!");
+    }
   };
 
-  if (!post) return <p>Loading...</p>;
+  if (!post) return <p className="text-center mt-3">Loading...</p>;
 
   return (
     <div className="post-page">
@@ -125,8 +150,8 @@ function PostPage() {
           </form>
 
           {post.comments?.length > 0 ? (
-            post.comments.map((c, index) => (
-              <div key={index} className="comment-card">
+            post.comments.map((c) => (
+              <div key={c.id} className="comment-card">
                 <p>
                   <strong>{c.user}</strong>: {c.text}
                 </p>
@@ -136,47 +161,40 @@ function PostPage() {
                     : ""}
                 </small>
 
-                {/* Reply button */}
-                <button
-                  className="reply-button"
-                  onClick={() =>
-                    setReplyingTo(replyingTo === index ? null : index)
-                  }
+                {/* Replies */}
+                {c.replies?.map((r) => (
+                  <div key={r.id} className="reply-card">
+                    <p>
+                      <strong>{r.user}</strong>: {r.text}
+                    </p>
+                    <small>
+                      {r.createdAt
+                        ? new Date(r.createdAt.seconds * 1000).toLocaleString()
+                        : ""}
+                    </small>
+                  </div>
+                ))}
+
+                {/* Reply Input */}
+                <form
+                  className="reply-form"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleReply(c.id, replyMap[c.id] || "");
+                  }}
                 >
-                  <FaReply className="icon" /> Reply
-                </button>
-
-                {/* Reply Form */}
-                {replyingTo === index && (
-                  <form
-                    onSubmit={(e) => handleReply(e, index)}
-                    className="reply-form"
-                  >
-                    <input
-                      type="text"
-                      placeholder="Write a reply..."
-                      value={replyText}
-                      onChange={(e) => setReplyText(e.target.value)}
-                      required
-                    />
-                    <button type="submit">Reply</button>
-                  </form>
-                )}
-
-                {/* Display replies */}
-                {c.replies?.length > 0 &&
-                  c.replies.map((r, rIndex) => (
-                    <div key={rIndex} className="reply-card">
-                      <p>
-                        <strong>{r.user}</strong>: {r.text}
-                      </p>
-                      <small>
-                        {r.createdAt
-                          ? new Date(r.createdAt.seconds * 1000).toLocaleString()
-                          : ""}
-                      </small>
-                    </div>
-                  ))}
+                  <input
+                    type="text"
+                    placeholder="Reply..."
+                    value={replyMap[c.id] || ""}
+                    onChange={(e) =>
+                      setReplyMap({ ...replyMap, [c.id]: e.target.value })
+                    }
+                  />
+                  <button type="submit">
+                    <FaReply />
+                  </button>
+                </form>
               </div>
             ))
           ) : (
@@ -187,5 +205,3 @@ function PostPage() {
     </div>
   );
 }
-
-export default PostPage;

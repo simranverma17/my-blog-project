@@ -1,65 +1,81 @@
-import { useEffect, useState } from "react";
-import { db } from "./firebase";
-import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
-import "./styles/Home.css";
-import Loader from "./components/Loader";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { db } from "./firebase";
+import { collection, onSnapshot } from "firebase/firestore";
+import "./styles/Home.css";
 
-function Home() {
+export default function Home() {
   const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [filteredPosts, setFilteredPosts] = useState([]);
 
+  // Fetch all posts in real-time
   useEffect(() => {
-    const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const postsData = snapshot.docs.map((doc) => ({
+    const unsub = onSnapshot(collection(db, "posts"), (snapshot) => {
+      const allPosts = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
-      setPosts(postsData);
-      setLoading(false);
+      setPosts(allPosts);
+      setFilteredPosts(allPosts);
     });
-
-    return () => unsubscribe();
+    return () => unsub();
   }, []);
 
-  if (loading) return <Loader />;
+  // Search posts by title/content
+  useEffect(() => {
+    if (!search.trim()) {
+      setFilteredPosts(posts);
+    } else {
+      const filtered = posts.filter(
+        (post) =>
+          post.title.toLowerCase().includes(search.toLowerCase()) ||
+          post.content.toLowerCase().includes(search.toLowerCase())
+      );
+      setFilteredPosts(filtered);
+    }
+  }, [search, posts]);
 
   return (
     <div className="home-page">
       <div className="home-container">
-        <h1 className="brand-title">BlogSphere</h1>
-        <h2 className="home-heading">Latest Posts</h2>
+        <h2 className="home-heading">All Blog Posts</h2>
 
-        {posts.length === 0 && (
-          <p className="no-posts">No posts yet. Create one!</p>
+        {/* Search Bar */}
+        <div className="search-bar">
+          <input
+            type="text"
+            placeholder="Search posts..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+
+        {/* Posts */}
+        {filteredPosts.length > 0 ? (
+          filteredPosts.map((post) => (
+            <div key={post.id} className="post-card">
+              <Link to={`/post/${post.id}`}>
+                <h3 className="post-title">{post.title}</h3>
+              </Link>
+              <p className="post-snippet">
+                {post.content.length > 120
+                  ? post.content.slice(0, 120) + "..."
+                  : post.content}
+              </p>
+              <div className="card-footer">
+                {post.tags?.map((tag, index) => (
+                  <span key={index} className="chip">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))
+        ) : (
+          <p className="no-posts">No posts found.</p>
         )}
-
-        {posts.map((post) => (
-          <div key={post.id} className="post-card">
-            <Link to={`/post/${post.id}`} className="post-link">
-            <h3>{post.title}</h3>
-            </Link>
-            <p
-              className="post-snippet"
-              dangerouslySetInnerHTML={{
-                __html:
-                  post.content.length > 200
-                    ? post.content.slice(0, 200) + "..."
-                    : post.content,
-              }}
-            />
-            <p className="post-meta">
-              By <strong>{post.authorEmail}</strong> •{" "}
-              {post.createdAt?.toDate
-                ? post.createdAt.toDate().toLocaleString()
-                : "Unknown date"}
-            </p>
-          </div>
-        ))}
       </div>
     </div>
   );
 }
-
-export default Home;

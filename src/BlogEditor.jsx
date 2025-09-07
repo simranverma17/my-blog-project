@@ -1,58 +1,129 @@
-import { useState } from "react";
-import { db, auth } from "./firebase";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuthState } from "react-firebase-hooks/auth";
+import { auth, db } from "./firebase";
+import { doc, setDoc, updateDoc, getDoc, serverTimestamp } from "firebase/firestore";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 import "./styles/BlogEditor.css";
 
-function BlogEditor() {
+export default function BlogEditor() {
+  const { postId } = useParams();
+  const [user] = useAuthState(auth);
+  const navigate = useNavigate();
+
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [user] = useAuthState(auth);
+  const [loading, setLoading] = useState(false);
 
-  const handlePost = async (e) => {
-    e.preventDefault();
-    if (!user) return alert("You must be logged in to post");
+  const quillRef = useRef();
 
+  // Fetch post for editing
+  useEffect(() => {
+    if (!postId) return;
+    const fetchPost = async () => {
+      try {
+        const postRef = doc(db, "posts", postId);
+        const postSnap = await getDoc(postRef);
+        if (postSnap.exists()) {
+          const data = postSnap.data();
+          setTitle(data.title);
+          setContent(data.content);
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Error fetching post!");
+      }
+    };
+    fetchPost();
+  }, [postId]);
+
+  // Autosave every 15 seconds
+  useEffect(() => {
+    if (!postId) return;
+    const interval = setInterval(() => {
+      if (title || content) saveDraft();
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [title, content, postId]);
+
+  const saveDraft = async () => {
     try {
-      await addDoc(collection(db, "posts"), {
+      const postRef = doc(db, "posts", postId);
+      await updateDoc(postRef, {
         title,
         content,
-        authorEmail: user.email,
-        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       });
-      setTitle("");
-      setContent("");
-      alert("Post created 🎉");
+      console.log("Draft saved!");
+    } catch (err) {
+      console.error("Autosave error:", err);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!user) return alert("Login first!");
+    if (!title || !content) return alert("Title and content are required!");
+
+    setLoading(true);
+
+    const postData = {
+      title,
+      content,
+      authorId: user.uid,
+      authorName: user.displayName || user.email,
+      createdAt: serverTimestamp(),
+    };
+
+    try {
+      if (postId) {
+        // Update existing post
+        const postRef = doc(db, "posts", postId);
+        await updateDoc(postRef, postData);
+      } else {
+        // Create new post
+        const newPostRef = doc(db, "posts", Date.now().toString());
+        await setDoc(newPostRef, postData);
+      }
+      navigate("/home");
     } catch (err) {
       console.error(err);
-      alert("Error creating post: " + err.message);
+      alert("Error saving post!");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="editor-page">
-      <div className="editor-card">
-        <h1 className="brand-title">BlogSphere</h1>
-        <h2 className="editor-heading">Create a New Post</h2>
-        <form onSubmit={handlePost}>
+    <div className="blog-editor-page">
+      <div className="editor-container">
+        <h2 className="editor-heading">{postId ? "Edit Post" : "New Post"}</h2>
+
+        <form onSubmit={handleSubmit} className="editor-form">
           <input
             type="text"
-            placeholder="Enter post title"
+            placeholder="Post Title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
+            className="editor-title-input"
             required
           />
-          <textarea
-            placeholder="Write your blog content..."
+
+          <ReactQuill
+            theme="snow"
             value={content}
-            onChange={(e) => setContent(e.target.value)}
-            required
+            onChange={setContent}
+            ref={quillRef}
+            placeholder="Write your post here..."
+            className="editor-quill"
           />
-          <button type="submit">Publish Post</button>
+
+          <button type="submit" className="editor-submit-btn" disabled={loading}>
+            {loading ? "Saving..." : postId ? "Update Post" : "Publish Post"}
+          </button>
         </form>
       </div>
     </div>
   );
 }
-
-export default BlogEditor;
