@@ -4,78 +4,60 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #f0f2f5;
+  background: linear-gradient(135deg, #f5f6f8, #e9ecef, #f5f6f8);
+  background-size: 400% 400%;
+  animation: gradientShift 12s ease infinite;
 }
 
-
 .auth-card {
-  width: 380px;
-  padding: 40px 30px;
-  border-radius: 16px;
+  width: 400px;
+  padding: 50px;
+  border-radius: 20px;
   background: #ffffff;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
   text-align: center;
   animation: fadeIn 0.8s ease-in-out;
 }
 
 .brand-title {
   font-size: 28px;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 10px;
-  letter-spacing: 1px;
-}
-
-
-.auth-heading {
-  font-size: 20px;
   margin-bottom: 20px;
-  color: #444;
+  color: #667eea;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-shadow: 0px 3px 6px rgba(102, 126, 234, 0.25);
 }
 
-
-.auth-card input {
-  width: 100%;
-  padding: 12px;
-  margin: 10px 0;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 14px;
-  outline: none;
-  transition: border 0.3s, box-shadow 0.3s;
+.auth-card h2 {
+  margin-bottom: 20px;
+  color: #333;
+  font-weight: 600;
 }
 
-.auth-card input:focus {
-  border: 1px solid #667eea;
-  box-shadow: 0 0 6px rgba(102, 126, 234, 0.4);
-}
-
-
-.auth-card button {
-  width: 100%;
-  margin-top: 15px;
-  font-size: 15px;
-  padding: 12px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
-  border: none;
-  transition: all 0.3s;
-}
-
-.auth-card button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 14px rgba(0,0,0,0.2);
-}
-
-
-.switch-text {
+.alt-link {
   margin-top: 15px;
   font-size: 14px;
-  color: #666;
+  color: #555;
 }
+
+.alt-link a {
+  color: #667eea;
+  font-weight: 600;
+  transition: color 0.3s;
+}
+
+.alt-link a:hover {
+  color: #38b000;
+}
+
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(20px);}
+  to { opacity: 1; transform: translateY(0);}
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }

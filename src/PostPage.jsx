@@ -1,248 +1,187 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { db, auth } from "./firebase";
 import {
   doc,
-  getDoc,
   updateDoc,
   arrayUnion,
   arrayRemove,
-  collection,
-  addDoc,
   onSnapshot,
-  deleteDoc,
-  serverTimestamp,
 } from "firebase/firestore";
+import { db, auth } from "./firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
-import Loader from "./components/Loader";
+import { FaHeart, FaRegHeart, FaCloud, FaReply } from "react-icons/fa";
 import "./styles/PostPage.css";
 
 function PostPage() {
-  const { id } = useParams(); // post ID
+  const { postId } = useParams();
   const [post, setPost] = useState(null);
-  const [comments, setComments] = useState([]);
-  const [newComment, setNewComment] = useState("");
-  const [replyingTo, setReplyingTo] = useState(null); // reply target
-  const [expandedComments, setExpandedComments] = useState({}); // collapse state
-  const [loading, setLoading] = useState(true);
+  const [comment, setComment] = useState("");
+  const [replyText, setReplyText] = useState("");
+  const [replyingTo, setReplyingTo] = useState(null); // comment index being replied to
   const [user] = useAuthState(auth);
 
   useEffect(() => {
-    const fetchPost = async () => {
-      const docRef = doc(db, "posts", id);
-      const snapshot = await getDoc(docRef);
-      if (snapshot.exists()) {
-        setPost({ id: snapshot.id, ...snapshot.data() });
+    const unsub = onSnapshot(doc(db, "posts", postId), (docSnap) => {
+      if (docSnap.exists()) {
+        setPost({ id: docSnap.id, ...docSnap.data() });
       }
-
-      const commentsRef = collection(db, "posts", id, "comments");
-      const unsubscribe = onSnapshot(commentsRef, (snap) => {
-        const commentsData = snap.docs.map((d) => ({
-          id: d.id,
-          ...d.data(),
-        }));
-        setComments(
-          commentsData.sort(
-            (a, b) => b.createdAt?.seconds - a.createdAt?.seconds
-          )
-        );
-      });
-
-      setLoading(false);
-      return () => unsubscribe();
-    };
-
-    fetchPost();
-  }, [id]);
+    });
+    return () => unsub();
+  }, [postId]);
 
   const handleLike = async () => {
-    if (!user) return alert("Login to like a post.");
-    try {
-      const postRef = doc(db, "posts", id);
-      const alreadyLiked = post.likes?.includes(user.uid);
-
-      await updateDoc(postRef, {
-        likes: alreadyLiked
-          ? arrayRemove(user.uid)
-          : arrayUnion(user.uid),
-      });
-
-      setPost((prev) => ({
-        ...prev,
-        likes: alreadyLiked
-          ? prev.likes.filter((uid) => uid !== user.uid)
-          : [...(prev.likes || []), user.uid],
-      }));
-    } catch (err) {
-      console.error("Error liking post:", err);
+    if (!user) return alert("Please login to like posts");
+    const postRef = doc(db, "posts", postId);
+    if (post.likes?.includes(user.uid)) {
+      await updateDoc(postRef, { likes: arrayRemove(user.uid) });
+    } else {
+      await updateDoc(postRef, { likes: arrayUnion(user.uid) });
     }
   };
 
-  const handleAddComment = async (e) => {
+  const handleComment = async (e) => {
     e.preventDefault();
-    if (!user) return alert("Login to comment.");
-    if (!newComment.trim()) return;
-
-    try {
-      const commentsRef = collection(db, "posts", id, "comments");
-      await addDoc(commentsRef, {
-        text: newComment,
-        author: user.displayName || user.email,
-        authorId: user.uid,
-        parentId: replyingTo || null,
-        createdAt: serverTimestamp(),
-      });
-      setNewComment("");
-      setReplyingTo(null);
-    } catch (err) {
-      console.error("Error adding comment:", err);
-    }
+    if (!user) return alert("Please login to comment");
+    const postRef = doc(db, "posts", postId);
+    await updateDoc(postRef, {
+      comments: arrayUnion({
+        text: comment,
+        user: user.displayName || user.email,
+        createdAt: new Date(),
+        replies: [],
+      }),
+    });
+    setComment("");
   };
 
-  const handleDeleteComment = async (commentId, authorId) => {
-    if (!user || user.uid !== authorId) return;
-    try {
-      await deleteDoc(doc(db, "posts", id, "comments", commentId));
-    } catch (err) {
-      console.error("Error deleting comment:", err);
-    }
+  const handleReply = async (e, index) => {
+    e.preventDefault();
+    if (!user) return alert("Please login to reply");
+    if (!replyText) return;
+
+    const postRef = doc(db, "posts", postId);
+    const updatedComments = [...post.comments];
+    if (!updatedComments[index].replies) updatedComments[index].replies = [];
+
+    updatedComments[index].replies.push({
+      text: replyText,
+      user: user.displayName || user.email,
+      createdAt: new Date(),
+    });
+
+    await updateDoc(postRef, { comments: updatedComments });
+    setReplyText("");
+    setReplyingTo(null);
   };
 
-  const toggleReplies = (commentId) => {
-    setExpandedComments((prev) => ({
-      ...prev,
-      [commentId]: !prev[commentId],
-    }));
-  };
-
-  // recursive threaded render
-  const renderComments = (parentId = null, level = 0) => {
-    return comments
-      .filter((c) => c.parentId === parentId)
-      .map((c) => {
-        const childComments = comments.filter(
-          (child) => child.parentId === c.id
-        );
-        const isExpanded = expandedComments[c.id] ?? true;
-
-        return (
-          <div
-            key={c.id}
-            className="comment-card"
-            style={{ marginLeft: `${level * 20}px` }}
-          >
-            <p className="comment-author">
-              <strong>{c.author}</strong>
-            </p>
-            <p className="comment-text">{c.text}</p>
-            {c.createdAt?.toDate && (
-              <p className="comment-date">
-                {c.createdAt.toDate().toLocaleString()}
-              </p>
-            )}
-
-            <div className="comment-actions">
-              <button
-                className="reply-btn"
-                onClick={() => setReplyingTo(c.id)}
-              >
-                Reply
-              </button>
-              {childComments.length > 0 && (
-                <button
-                  className="toggle-replies"
-                  onClick={() => toggleReplies(c.id)}
-                >
-                  {isExpanded
-                    ? `Hide ${childComments.length} repl${
-                        childComments.length > 1 ? "ies" : "y"
-                      }`
-                    : `View ${childComments.length} repl${
-                        childComments.length > 1 ? "ies" : "y"
-                      }`}
-                </button>
-              )}
-              {user?.uid === c.authorId && (
-                <button
-                  className="delete-comment"
-                  onClick={() => handleDeleteComment(c.id, c.authorId)}
-                >
-                  Delete
-                </button>
-              )}
-            </div>
-
-            {/* Recursive children */}
-            {isExpanded && renderComments(c.id, level + 1)}
-          </div>
-        );
-      });
-  };
-
-  if (loading) return <Loader />;
-  if (!post) return <p className="no-post">Post not found</p>;
+  if (!post) return <p>Loading...</p>;
 
   return (
     <div className="post-page">
       <div className="post-container">
-        <h1 className="post-title">{post.title}</h1>
-        <div
-          className="post-content"
-          dangerouslySetInnerHTML={{ __html: post.content }}
-        />
+        <h2 className="post-title">{post.title}</h2>
+        <p className="post-content">{post.content}</p>
         <p className="post-meta">
-          By <strong>{post.authorEmail}</strong>
+          By {post.authorName || "Anonymous"} •{" "}
+          {post.createdAt
+            ? new Date(post.createdAt.seconds * 1000).toLocaleDateString()
+            : ""}
         </p>
 
+        {/* Actions */}
         <div className="post-actions">
           <button
             onClick={handleLike}
             className={`like-button ${
-              post.likes?.includes(user?.uid) ? "liked" : ""
+              user && post.likes?.includes(user.uid) ? "liked" : ""
             }`}
           >
-            ❤️ {post.likes ? post.likes.length : 0}
+            {user && post.likes?.includes(user.uid) ? (
+              <FaHeart className="icon liked-icon" />
+            ) : (
+              <FaRegHeart className="icon" />
+            )}
+            {post.likes ? post.likes.length : 0}
           </button>
+
           <span className="comment-count">
-            💬 {comments.length} Comments
+            <FaCloud className="icon cloud-icon" />{" "}
+            {post.comments ? post.comments.length : 0}
           </span>
         </div>
 
-        {/* Comments Section */}
+        {/* Comment Section */}
         <div className="comments-section">
           <h3>Comments</h3>
+          <form onSubmit={handleComment} className="comment-form">
+            <input
+              type="text"
+              placeholder="Write a comment..."
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              required
+            />
+            <button type="submit">Post</button>
+          </form>
 
-          {user && (
-            <form onSubmit={handleAddComment} className="comment-form">
-              {replyingTo && (
-                <p className="replying-to">
-                  Replying…{" "}
-                  <button
-                    type="button"
-                    onClick={() => setReplyingTo(null)}
-                    className="cancel-reply"
-                  >
-                    Cancel
-                  </button>
+          {post.comments?.length > 0 ? (
+            post.comments.map((c, index) => (
+              <div key={index} className="comment-card">
+                <p>
+                  <strong>{c.user}</strong>: {c.text}
                 </p>
-              )}
-              <input
-                type="text"
-                placeholder="Write a comment..."
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-              />
-              <button type="submit">
-                {replyingTo ? "Reply" : "Post"}
-              </button>
-            </form>
-          )}
+                <small>
+                  {c.createdAt
+                    ? new Date(c.createdAt.seconds * 1000).toLocaleString()
+                    : ""}
+                </small>
 
-          {comments.length === 0 && (
-            <p className="no-comments">No comments yet</p>
-          )}
+                {/* Reply button */}
+                <button
+                  className="reply-button"
+                  onClick={() =>
+                    setReplyingTo(replyingTo === index ? null : index)
+                  }
+                >
+                  <FaReply className="icon" /> Reply
+                </button>
 
-          {renderComments()}
+                {/* Reply Form */}
+                {replyingTo === index && (
+                  <form
+                    onSubmit={(e) => handleReply(e, index)}
+                    className="reply-form"
+                  >
+                    <input
+                      type="text"
+                      placeholder="Write a reply..."
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      required
+                    />
+                    <button type="submit">Reply</button>
+                  </form>
+                )}
+
+                {/* Display replies */}
+                {c.replies?.length > 0 &&
+                  c.replies.map((r, rIndex) => (
+                    <div key={rIndex} className="reply-card">
+                      <p>
+                        <strong>{r.user}</strong>: {r.text}
+                      </p>
+                      <small>
+                        {r.createdAt
+                          ? new Date(r.createdAt.seconds * 1000).toLocaleString()
+                          : ""}
+                      </small>
+                    </div>
+                  ))}
+              </div>
+            ))
+          ) : (
+            <p>No comments yet.</p>
+          )}
         </div>
       </div>
     </div>

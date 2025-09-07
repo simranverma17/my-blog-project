@@ -1,6 +1,7 @@
 import Login from "./Login";
 import { Link } from "react-router-dom";
 import "./styles/AuthPage.css";  
+import "./styles/Form.css";
 function LoginPage() {
   return (
     <div className="auth-page">

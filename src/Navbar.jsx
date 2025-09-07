@@ -2,53 +2,41 @@ import { Link } from "react-router-dom";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "./firebase";
 import { signOut } from "firebase/auth";
+import { useEffect, useState } from "react";
 import "./styles/Navbar.css";
 
 export default function Navbar() {
   const [user] = useAuthState(auth);
+  const [scrolled, setScrolled] = useState(false);
+
+  // Handle scroll shadow
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
-    <nav style={{ padding: "10px", background: "#282c34", color: "white" }}>
-      <Link to="/home" style={{ margin: "0 10px", color: "white" }}>
-        BlogSphere
-      </Link>
+    <nav className={`nav ${scrolled ? "scrolled" : ""}`}>
+      <div className="nav-inner">
+        {/* Brand */}
+        <Link to="/home" className="brand">BlogSphere</Link>
 
-      {user ? (
-        <>
-          <Link to="/home" style={{ margin: "0 10px", color: "white" }}>
-            Home
-          </Link>
-          <Link to="/editor" style={{ margin: "0 10px", color: "white" }}>
-            New Post
-          </Link>
-          <Link to="/profile" style={{ margin: "0 10px", color: "white" }}>
-            Profile
-          </Link>
-          <button
-            onClick={() => signOut(auth)}
-            style={{
-              marginLeft: "15px",
-              background: "red",
-              color: "white",
-              border: "none",
-              padding: "5px 10px",
-              borderRadius: "5px",
-              cursor: "pointer",
-            }}
-          >
-            Logout
-          </button>
-        </>
-      ) : (
-        <>
-          <Link to="/login" style={{ margin: "0 10px", color: "white" }}>
-            Login
-          </Link>
-          <Link to="/signup" style={{ margin: "0 10px", color: "white" }}>
-            Signup
-          </Link>
-        </>
-      )}
+        {/* Navigation Links */}
+        {user ? (
+          <>
+            <Link to="/home">Home</Link>
+            <Link to="/editor">New Post</Link>
+            <Link to="/profile">Profile</Link>
+            <button onClick={() => signOut(auth)}>Logout</button>
+          </>
+        ) : (
+          <>
+            <Link to="/login">Login</Link>
+            <Link to="/signup">Signup</Link>
+          </>
+        )}
+      </div>
     </nav>
   );
 }

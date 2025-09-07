@@ -1,49 +1,43 @@
-.form-container {
-  max-width: 400px;
-  margin: 80px auto;
-  padding: 30px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-  backdrop-filter: blur(12px);
-  animation: fadeIn 0.8s ease-in-out;
-}
 
-.form-container h2 {
-  text-align: center;
-  margin-bottom: 20px;
-  color: #333;
-}
 
-.form-container input,
-.form-container textarea {
-  padding: 12px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  outline: none;
-  font-size: 14px;
-  transition: border 0.3s;
-}
-
-.form-container input:focus,
-.form-container textarea:focus {
-  border: 1px solid #667eea;
-}
-
-.form-container button {
+form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
   width: 100%;
-  margin-top: 15px;
-  font-size: 16px;
 }
 
-.form-container p {
-  text-align: center;
-  margin-top: 15px;
-  font-size: 14px;
+form input {
+  width: 100%;
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  font-size: 15px;
+  text-align: left; 
+  transition: all 0.3s;
 }
 
-/* Animation */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+form input:focus {
+  border: 1px solid #667eea;
+  box-shadow: 0 0 8px rgba(102, 126, 234, 0.5);
+  outline: none;
+}
+
+form button {
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #667eea, #38b000);
+  color: white;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+form button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.2);
 }
