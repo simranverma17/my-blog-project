@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth, db, storage } from "./firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useNavigate } from "react-router-dom";
+import { updateProfile } from "firebase/auth"; // ✅ Correct import
 import "./styles/Profile.css";
 
 export default function EditProfile() {
@@ -51,18 +52,24 @@ export default function EditProfile() {
         photoURL = await getDownloadURL(photoRef);
       }
 
-      // Update Firestore
+      // ✅ Ensure Firestore has user document (if not, create it)
       const profileRef = doc(db, "users", user.uid);
-      await updateDoc(profileRef, {
+      await setDoc(
+        profileRef,
+        {
+          displayName,
+          bio,
+          email: user.email,
+          ...(photoURL && { photoURL }),
+        },
+        { merge: true }
+      );
+
+      // ✅ Update Firebase Auth profile
+      await updateProfile(user, {
         displayName,
-        bio,
         ...(photoURL && { photoURL }),
       });
-
-      // Update Firebase Auth profile
-      if (user) {
-        await user.updateProfile({ displayName, ...(photoURL && { photoURL }) });
-      }
 
       navigate("/profile");
     } catch (err) {

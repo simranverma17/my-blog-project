@@ -73,6 +73,7 @@ export default function BlogEditor() {
       content,
       authorId: user.uid,
       authorName: user.displayName || user.email,
+      authorEmail: user.email, // ✅ always save email
       createdAt: serverTimestamp(),
     };
 

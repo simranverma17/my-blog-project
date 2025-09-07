@@ -107,7 +107,7 @@ export default function PostPage() {
         <h2 className="post-title">{post.title}</h2>
         <p className="post-content">{post.content}</p>
         <p className="post-meta">
-          By {post.authorName || "Anonymous"} •{" "}
+          By {post.authorName || post.authorEmail || "Anonymous"} •{" "}
           {post.createdAt
             ? new Date(post.createdAt.seconds * 1000).toLocaleDateString()
             : ""}

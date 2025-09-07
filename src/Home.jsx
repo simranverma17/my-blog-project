@@ -29,8 +29,8 @@ export default function Home() {
     } else {
       const filtered = posts.filter(
         (post) =>
-          post.title.toLowerCase().includes(search.toLowerCase()) ||
-          post.content.toLowerCase().includes(search.toLowerCase())
+          post.title?.toLowerCase().includes(search.toLowerCase()) ||
+          post.content?.toLowerCase().includes(search.toLowerCase())
       );
       setFilteredPosts(filtered);
     }
@@ -59,16 +59,19 @@ export default function Home() {
                 <h3 className="post-title">{post.title}</h3>
               </Link>
               <p className="post-snippet">
-                {post.content.length > 120
+                {post.content?.length > 120
                   ? post.content.slice(0, 120) + "..."
                   : post.content}
               </p>
               <div className="card-footer">
-                {post.tags?.map((tag, index) => (
-                  <span key={index} className="chip">
-                    {tag}
-                  </span>
-                ))}
+                <span className="chip">
+                  By {post.authorName || post.authorEmail || "Anonymous"}
+                </span>
+                <span className="chip outline">
+                  {post.createdAt
+                    ? new Date(post.createdAt.seconds * 1000).toLocaleDateString()
+                    : ""}
+                </span>
               </div>
             </div>
           ))

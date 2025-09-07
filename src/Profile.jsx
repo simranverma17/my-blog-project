@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth, db } from "./firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore"; // ✅ live updates
 import { Link } from "react-router-dom";
 import "./styles/Profile.css";
 
@@ -16,40 +16,27 @@ export default function Profile() {
       return;
     }
 
-    const fetchProfile = async () => {
-      try {
-        const docRef = doc(db, "users", user.uid);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          setProfile({
-            displayName: docSnap.data()?.displayName || user.displayName || "Anonymous",
-            email: docSnap.data()?.email || user.email,
-            bio: docSnap.data()?.bio || "",
-            photoURL: docSnap.data()?.photoURL || null,
-          });
-        } else {
-          setProfile({
-            displayName: user.displayName || "Anonymous",
-            email: user.email,
-            bio: "",
-            photoURL: null,
-          });
-        }
-      } catch (err) {
-        console.error("Error fetching profile:", err);
+    // ✅ Use onSnapshot for real-time updates
+    const unsubscribe = onSnapshot(doc(db, "users", user.uid), (docSnap) => {
+      if (docSnap.exists()) {
+        setProfile({
+          displayName: docSnap.data()?.displayName || user.displayName || "Anonymous",
+          email: docSnap.data()?.email || user.email,
+          bio: docSnap.data()?.bio || "",
+          photoURL: docSnap.data()?.photoURL || user.photoURL || null,
+        });
+      } else {
         setProfile({
           displayName: user.displayName || "Anonymous",
           email: user.email,
           bio: "",
-          photoURL: null,
+          photoURL: user.photoURL || null,
         });
-      } finally {
-        setLoading(false);
       }
-    };
+      setLoading(false);
+    });
 
-    fetchProfile();
+    return () => unsubscribe();
   }, [user]);
 
   if (!user) return <p className="text-center mt-3">Please login to view your profile.</p>;
