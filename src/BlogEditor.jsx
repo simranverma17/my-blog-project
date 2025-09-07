@@ -68,13 +68,15 @@ export default function BlogEditor() {
 
     setLoading(true);
 
+    // ✅ Always store both name and email
     const postData = {
       title,
       content,
       authorId: user.uid,
-      authorName: user.displayName || user.email,
-      authorEmail: user.email, // ✅ always save email
+      authorName: user.displayName || user.email, // name first, fallback email
+      authorEmail: user.email,
       createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     };
 
     try {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { db } from "./firebase";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, onSnapshot, doc, getDoc } from "firebase/firestore";
 import "./styles/Home.css";
 
 export default function Home() {
@@ -11,14 +11,34 @@ export default function Home() {
 
   // Fetch all posts in real-time
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, "posts"), (snapshot) => {
-      const allPosts = snapshot.docs.map((doc) => ({
+    const unsub = onSnapshot(collection(db, "posts"), async (snapshot) => {
+      let allPosts = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
-      setPosts(allPosts);
-      setFilteredPosts(allPosts);
+
+      // 🔥 Fix for old posts (fetch missing authorName)
+      const withAuthors = await Promise.all(
+        allPosts.map(async (post) => {
+          if (!post.authorName && post.authorId) {
+            try {
+              const userRef = doc(db, "users", post.authorId);
+              const userSnap = await getDoc(userRef);
+              if (userSnap.exists()) {
+                return { ...post, authorName: userSnap.data().displayName || post.authorEmail };
+              }
+            } catch (err) {
+              console.error("Error fetching user:", err);
+            }
+          }
+          return post;
+        })
+      );
+
+      setPosts(withAuthors);
+      setFilteredPosts(withAuthors);
     });
+
     return () => unsub();
   }, []);
 

@@ -6,6 +6,7 @@ import {
   updateDoc,
   arrayUnion,
   arrayRemove,
+  getDoc,
 } from "firebase/firestore";
 import { db, auth } from "./firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
@@ -21,9 +22,25 @@ export default function PostPage() {
 
   // Fetch post data with live updates
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, "posts", postId), (docSnap) => {
+    const unsub = onSnapshot(doc(db, "posts", postId), async (docSnap) => {
       if (docSnap.exists()) {
-        setPost({ id: docSnap.id, ...docSnap.data() });
+        let postData = { id: docSnap.id, ...docSnap.data() };
+
+        // 🔥 Fix for older posts without authorName
+        if (!postData.authorName && postData.authorId) {
+          try {
+            const userRef = doc(db, "users", postData.authorId);
+            const userSnap = await getDoc(userRef);
+            if (userSnap.exists()) {
+              postData.authorName =
+                userSnap.data().displayName || postData.authorEmail;
+            }
+          } catch (err) {
+            console.error("Error fetching user:", err);
+          }
+        }
+
+        setPost(postData);
       }
     });
     return () => unsub();
