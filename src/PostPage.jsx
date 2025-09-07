@@ -6,7 +6,6 @@ import {
   updateDoc,
   arrayUnion,
   arrayRemove,
-  getDoc,
 } from "firebase/firestore";
 import { db, auth } from "./firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
@@ -22,25 +21,9 @@ export default function PostPage() {
 
   // Fetch post data with live updates
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, "posts", postId), async (docSnap) => {
+    const unsub = onSnapshot(doc(db, "posts", postId), (docSnap) => {
       if (docSnap.exists()) {
-        let postData = { id: docSnap.id, ...docSnap.data() };
-
-        // 🔥 Fix for older posts without authorName
-        if (!postData.authorName && postData.authorId) {
-          try {
-            const userRef = doc(db, "users", postData.authorId);
-            const userSnap = await getDoc(userRef);
-            if (userSnap.exists()) {
-              postData.authorName =
-                userSnap.data().displayName || postData.authorEmail;
-            }
-          } catch (err) {
-            console.error("Error fetching user:", err);
-          }
-        }
-
-        setPost(postData);
+        setPost({ id: docSnap.id, ...docSnap.data() });
       }
     });
     return () => unsub();
@@ -122,7 +105,13 @@ export default function PostPage() {
     <div className="post-page">
       <div className="post-container">
         <h2 className="post-title">{post.title}</h2>
-        <p className="post-content">{post.content}</p>
+
+        {/* Render Quill HTML safely */}
+        <div
+          className="post-content"
+          dangerouslySetInnerHTML={{ __html: post.content }}
+        />
+
         <p className="post-meta">
           By {post.authorName || post.authorEmail || "Anonymous"} •{" "}
           {post.createdAt

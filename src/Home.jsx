@@ -1,44 +1,32 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { db } from "./firebase";
-import { collection, onSnapshot, doc, getDoc } from "firebase/firestore";
+import { collection, onSnapshot } from "firebase/firestore";
 import "./styles/Home.css";
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
   const [search, setSearch] = useState("");
   const [filteredPosts, setFilteredPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Function to strip HTML tags for snippet preview
+  const stripHtml = (html) => {
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    return doc.body.textContent || "";
+  };
 
   // Fetch all posts in real-time
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, "posts"), async (snapshot) => {
-      let allPosts = snapshot.docs.map((doc) => ({
+    const unsub = onSnapshot(collection(db, "posts"), (snapshot) => {
+      const allPosts = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
-
-      // 🔥 Fix for old posts (fetch missing authorName)
-      const withAuthors = await Promise.all(
-        allPosts.map(async (post) => {
-          if (!post.authorName && post.authorId) {
-            try {
-              const userRef = doc(db, "users", post.authorId);
-              const userSnap = await getDoc(userRef);
-              if (userSnap.exists()) {
-                return { ...post, authorName: userSnap.data().displayName || post.authorEmail };
-              }
-            } catch (err) {
-              console.error("Error fetching user:", err);
-            }
-          }
-          return post;
-        })
-      );
-
-      setPosts(withAuthors);
-      setFilteredPosts(withAuthors);
+      setPosts(allPosts);
+      setFilteredPosts(allPosts);
+      setLoading(false);
     });
-
     return () => unsub();
   }, []);
 
@@ -50,11 +38,17 @@ export default function Home() {
       const filtered = posts.filter(
         (post) =>
           post.title?.toLowerCase().includes(search.toLowerCase()) ||
-          post.content?.toLowerCase().includes(search.toLowerCase())
+          stripHtml(post.content || "")
+            .toLowerCase()
+            .includes(search.toLowerCase())
       );
       setFilteredPosts(filtered);
     }
   }, [search, posts]);
+
+  if (loading) {
+    return <p className="text-center mt-4">Loading posts...</p>;
+  }
 
   return (
     <div className="home-page">
@@ -79,9 +73,9 @@ export default function Home() {
                 <h3 className="post-title">{post.title}</h3>
               </Link>
               <p className="post-snippet">
-                {post.content?.length > 120
-                  ? post.content.slice(0, 120) + "..."
-                  : post.content}
+                {stripHtml(post.content)?.length > 120
+                  ? stripHtml(post.content).slice(0, 120) + "..."
+                  : stripHtml(post.content)}
               </p>
               <div className="card-footer">
                 <span className="chip">
