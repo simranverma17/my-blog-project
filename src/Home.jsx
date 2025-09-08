@@ -10,13 +10,13 @@ export default function Home() {
   const [filteredPosts, setFilteredPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Function to strip HTML tags for snippet preview
+  
   const stripHtml = (html) => {
     const doc = new DOMParser().parseFromString(html, "text/html");
     return doc.body.textContent || "";
   };
 
-  // Fetch all posts in real-time
+  
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "posts"), (snapshot) => {
       const allPosts = snapshot.docs.map((doc) => ({
@@ -30,7 +30,7 @@ export default function Home() {
     return () => unsub();
   }, []);
 
-  // Search posts by title/content
+  
   useEffect(() => {
     if (!search.trim()) {
       setFilteredPosts(posts);
@@ -55,7 +55,7 @@ export default function Home() {
       <div className="home-container">
         <h2 className="home-heading">All Blog Posts</h2>
 
-        {/* Search Bar */}
+        
         <div className="search-bar">
           <input
             type="text"
@@ -65,7 +65,7 @@ export default function Home() {
           />
         </div>
 
-        {/* Posts */}
+        
         {filteredPosts.length > 0 ? (
           filteredPosts.map((post) => (
             <div key={post.id} className="post-card">

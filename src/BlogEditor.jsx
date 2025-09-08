@@ -18,7 +18,6 @@ export default function BlogEditor() {
 
   const quillRef = useRef();
 
-  // Fetch post for editing
   useEffect(() => {
     if (!postId) return;
     const fetchPost = async () => {
@@ -38,7 +37,6 @@ export default function BlogEditor() {
     fetchPost();
   }, [postId]);
 
-  // Autosave every 15 seconds
   useEffect(() => {
     if (!postId) return;
     const interval = setInterval(() => {
@@ -68,12 +66,11 @@ export default function BlogEditor() {
 
     setLoading(true);
 
-    // ✅ Always store both name and email
     const postData = {
       title,
       content,
       authorId: user.uid,
-      authorName: user.displayName || user.email, // name first, fallback email
+      authorName: user.displayName || user.email, 
       authorEmail: user.email,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -81,11 +78,11 @@ export default function BlogEditor() {
 
     try {
       if (postId) {
-        // Update existing post
+        
         const postRef = doc(db, "posts", postId);
         await updateDoc(postRef, postData);
       } else {
-        // Create new post
+        
         const newPostRef = doc(db, "posts", Date.now().toString());
         await setDoc(newPostRef, postData);
       }

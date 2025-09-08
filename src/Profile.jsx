@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth, db } from "./firebase";
-import { doc, onSnapshot } from "firebase/firestore"; // ✅ live updates
+import { doc, onSnapshot } from "firebase/firestore"; 
 import { Link } from "react-router-dom";
 import "./styles/Profile.css";
 
@@ -16,7 +16,7 @@ export default function Profile() {
       return;
     }
 
-    // ✅ Use onSnapshot for real-time updates
+    
     const unsubscribe = onSnapshot(doc(db, "users", user.uid), (docSnap) => {
       if (docSnap.exists()) {
         setProfile({

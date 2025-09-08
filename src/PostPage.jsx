@@ -19,7 +19,7 @@ export default function PostPage() {
   const [replyMap, setReplyMap] = useState({});
   const [user] = useAuthState(auth);
 
-  // Fetch post data with live updates
+  
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "posts", postId), (docSnap) => {
       if (docSnap.exists()) {
@@ -29,7 +29,7 @@ export default function PostPage() {
     return () => unsub();
   }, [postId]);
 
-  // Handle Likes
+  
   const handleLike = async () => {
     if (!user) return alert("Please login to like posts");
     try {
@@ -45,7 +45,7 @@ export default function PostPage() {
     }
   };
 
-  // Handle Comment
+  
   const handleComment = async (e) => {
     e.preventDefault();
     if (!user) return alert("Please login to comment");
@@ -68,7 +68,7 @@ export default function PostPage() {
     }
   };
 
-  // Handle Reply
+  
   const handleReply = async (commentId, replyText) => {
     if (!user) return alert("Please login to reply");
     if (!replyText.trim()) return;
@@ -106,7 +106,7 @@ export default function PostPage() {
       <div className="post-container">
         <h2 className="post-title">{post.title}</h2>
 
-        {/* Render Quill HTML safely */}
+        
         <div
           className="post-content"
           dangerouslySetInnerHTML={{ __html: post.content }}
@@ -119,7 +119,7 @@ export default function PostPage() {
             : ""}
         </p>
 
-        {/* Actions */}
+        
         <div className="post-actions">
           <button
             onClick={handleLike}
@@ -141,7 +141,7 @@ export default function PostPage() {
           </span>
         </div>
 
-        {/* Comment Section */}
+        
         <div className="comments-section">
           <h3>Comments</h3>
           <form onSubmit={handleComment} className="comment-form">
@@ -167,7 +167,7 @@ export default function PostPage() {
                     : ""}
                 </small>
 
-                {/* Replies */}
+               
                 {c.replies?.map((r) => (
                   <div key={r.id} className="reply-card">
                     <p>
@@ -181,7 +181,7 @@ export default function PostPage() {
                   </div>
                 ))}
 
-                {/* Reply Input */}
+                
                 <form
                   className="reply-form"
                   onSubmit={(e) => {

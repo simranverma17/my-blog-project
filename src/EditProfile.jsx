@@ -4,7 +4,7 @@ import { auth, db, storage } from "./firebase";
 import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useNavigate } from "react-router-dom";
-import { updateProfile } from "firebase/auth"; // ✅ Correct import
+import { updateProfile } from "firebase/auth"; 
 import "./styles/Profile.css";
 
 export default function EditProfile() {
@@ -45,14 +45,13 @@ export default function EditProfile() {
     try {
       let photoURL = null;
 
-      // Upload photo if selected
       if (photoFile) {
         const photoRef = ref(storage, `profilePhotos/${user.uid}`);
         await uploadBytes(photoRef, photoFile);
         photoURL = await getDownloadURL(photoRef);
       }
 
-      // ✅ Ensure Firestore has user document (if not, create it)
+      
       const profileRef = doc(db, "users", user.uid);
       await setDoc(
         profileRef,
@@ -65,7 +64,7 @@ export default function EditProfile() {
         { merge: true }
       );
 
-      // ✅ Update Firebase Auth profile
+      
       await updateProfile(user, {
         displayName,
         ...(photoURL && { photoURL }),

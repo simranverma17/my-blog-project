@@ -1,42 +1,48 @@
-import { Link } from "react-router-dom";
-import { useAuthState } from "react-firebase-hooks/auth";
-import { auth } from "./firebase";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { signOut } from "firebase/auth";
-import { useEffect, useState } from "react";
-import "./styles/Navbar.css";
+import { auth } from "./firebase";
+import "./styles/navbar.css";
 
-export default function Navbar() {
-  const [user] = useAuthState(auth);
-  const [scrolled, setScrolled] = useState(false);
+function Navbar() {
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  // Handle scroll shadow
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 10);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  
+  if (location.pathname === "/") {
+    return null;
+  }
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate("/"); 
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
+  };
 
   return (
-    <nav className={`nav ${scrolled ? "scrolled" : ""}`}>
-      <div className="nav-inner">
-        {/* Brand */}
-        <Link to="/home" className="brand">BlogSphere</Link>
+    <nav className="nav">
+      <div className="nav-left">
+        {/* Brand Logo */}
+        <Link to="/home" className="brand">
+          BlogSphere
+        </Link>
 
         {/* Navigation Links */}
-        {user ? (
-          <>
-            <Link to="/home">Home</Link>
-            <Link to="/editor">New Post</Link>
-            <Link to="/profile">Profile</Link>
-            <button onClick={() => signOut(auth)}>Logout</button>
-          </>
-        ) : (
-          <>
-            <Link to="/login">Login</Link>
-            <Link to="/signup">Signup</Link>
-          </>
-        )}
+        <Link to="/home">Home</Link>
+        <Link to="/editor">Create</Link>
+      </div>
+
+      <div className="nav-right">
+        {/* Profile & Logout */}
+        <Link to="/profile">Profile</Link>
+        <button onClick={handleLogout} className="logout-btn">
+          Logout
+        </button>
       </div>
     </nav>
   );
 }
+
+export default Navbar;
